@@ -1,0 +1,23 @@
+# 빌드 산출물
+.next/
+out/
+build/
+dist/
+
+# 의존성
+node_modules/
+
+# 자동 생성 파일
+next-env.d.ts
+*.tsbuildinfo
+package-lock.json
+
+# 정적 파일
+public/
+
+# 환경 변수
+.env*
+
+# shadcn/ui 가 생성한 컴포넌트는 원본 포맷을 유지한다
+# (필요 시 아래 주석을 해제해서 제외 가능)
+# components/ui/

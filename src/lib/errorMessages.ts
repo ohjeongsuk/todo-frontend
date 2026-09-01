@@ -29,7 +29,7 @@ const MESSAGES: Record<ErrorCode, string> = {
  * 문구를 짧게 두는 이유: 이 문구가 뜨는 자리에는 항상 재시도 버튼이 함께 붙는다(UX-04).
  * "잠시 후 다시 시도해 주세요"는 버튼과 중복이다 (ROADMAP Phase 7 착수 결정).
  */
-const NETWORK_MESSAGE = "연결에 실패했습니다.";
+export const NETWORK_MESSAGE = "연결에 실패했습니다.";
 
 /** 어느 분기에도 걸리지 않은 경우의 최종 폴백. */
 const FALLBACK_MESSAGE = "알 수 없는 오류가 발생했습니다.";

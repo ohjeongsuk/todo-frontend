@@ -50,12 +50,19 @@ export function Pagination({ page, totalPages, onChange, siblingCount = 2 }: Pag
 
       {pages.map((p) => {
         const isCurrent = p === page;
+        // 모바일에서는 더 축약한다 (PRD F-29). 360px에서 5개를 다 그리면
+        // 44px x 7개 + 간격이 가용 폭을 넘겨 nav가 넘친다.
+        const isFarFromCurrent = Math.abs(p - page) > 1;
         return (
           <Button
             key={p}
             variant={isCurrent ? "default" : "ghost"}
             size="icon"
-            className={cn("size-11 tabular-nums", isCurrent && "pointer-events-none")}
+            className={cn(
+              "size-11 tabular-nums",
+              isCurrent && "pointer-events-none",
+              isFarFromCurrent && "hidden sm:inline-flex",
+            )}
             // 색만으로 현재 위치를 알리지 않는다 (PRD NF-24)
             aria-current={isCurrent ? "page" : undefined}
             aria-label={`${p + 1}페이지`}

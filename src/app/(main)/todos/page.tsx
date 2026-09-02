@@ -13,7 +13,7 @@ import { TodoList } from "@/components/todo/TodoList";
 import { TodoListSkeleton } from "@/components/todo/TodoListSkeleton";
 import { Button } from "@/components/ui/button";
 import { NETWORK_MESSAGE, toDisplayMessage } from "@/lib/errorMessages";
-import { useDeleteTodo, useTodoList, useToggleTodo } from "@/hooks/useTodos";
+import { useDeleteTodo, useTodoList } from "@/hooks/useTodos";
 
 import type { SortDirection, Todo, TodoSortField } from "@/types/todo";
 
@@ -44,11 +44,10 @@ function TodosContent() {
     setKeywordInput(keyword);
   }
 
-  const [togglingId, setTogglingId] = useState<number | null>(null);
+  // 토글은 행(TodoItem)이 자기 mutation을 소유하므로 여기서 추적하지 않는다.
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const query = useTodoList({ completed, keyword, page, sort, direction });
-  const toggle = useToggleTodo();
   const remove = useDeleteTodo();
 
   /** 파라미터를 병합해 URL을 갱신한다. 값이 undefined면 해당 키를 지운다. */
@@ -76,23 +75,19 @@ function TodosContent() {
     return () => clearTimeout(timer);
   }, [keywordInput, keyword, updateParams]);
 
-  function handleToggle(todo: Todo) {
-    setTogglingId(todo.id);
-    // 목표 상태를 보낸다. 서버가 값을 뒤집지 않는다.
-    toggle.mutate(
-      { id: todo.id, completed: !todo.completed },
-      { onSettled: () => setTogglingId(null) },
-    );
-  }
-
   function handleDelete(todo: Todo) {
+    // 삭제 전 건수를 mutate 호출 전에 잡아 둔다.
+    // useDeleteTodo의 onMutate가 항목을 낙관적으로 먼저 지우므로, onSuccess 안에서
+    // query.data를 읽으면 이미 줄어든 값이 나온다. 거기서 또 1을 빼면 마지막 항목을 지워도
+    // remaining이 0이 되지 않아 이전 페이지로 물러나지 않는다.
+    const countBeforeDelete = query.data?.content.length ?? 1;
+
     setDeletingId(todo.id);
     remove.mutate(todo.id, {
       onSuccess: () => {
         // 이 페이지의 마지막 항목이었다면 빈 페이지가 남는다. 이전 페이지로 물러난다.
         // 이 판단은 반드시 onSuccess 이후에 한다 — 앞당기면 실패 시 롤백이 눈에 보이지 않는다.
-        const remaining = (query.data?.content.length ?? 1) - 1;
-        if (remaining === 0 && page > 0) {
+        if (countBeforeDelete - 1 === 0 && page > 0) {
           updateParams({ page: String(page) }, "replace"); // page는 0-based, URL은 1-based
         }
       },
@@ -148,15 +143,7 @@ function TodosContent() {
         onSortChange={(s, d) => updateParams({ sort: s, direction: d, page: undefined }, "replace")}
       />
 
-      {remove.isError ? (
-        <p
-          role="alert"
-          className="rounded-md border border-destructive p-3 text-sm text-destructive"
-        >
-          {toDisplayMessage(remove.error)}
-        </p>
-      ) : null}
-
+      {/* 삭제 실패 문구는 useDeleteTodo가 토스트로 띄운다. 여기에 배너를 또 두면 중복이다. */}
       {hasStaleData ? (
         <div
           role="alert"
@@ -205,13 +192,7 @@ function TodosContent() {
         )
       ) : data ? (
         <>
-          <TodoList
-            todos={data.content}
-            onToggle={handleToggle}
-            onDelete={handleDelete}
-            togglingId={togglingId}
-            deletingId={deletingId}
-          />
+          <TodoList todos={data.content} onDelete={handleDelete} deletingId={deletingId} />
           <Pagination
             page={data.page}
             totalPages={data.totalPages}

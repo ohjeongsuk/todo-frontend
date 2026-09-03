@@ -71,3 +71,12 @@ src/
 ## 커밋
 
 husky + commitlint(`config-conventional`)가 걸려 있어 Conventional Commits 형식이 아니면 커밋이 거부된다. lint-staged가 스테이징 파일에 prettier·eslint를 돌린다.
+
+타입 앞 이모지는 선택 사항이다. `✨ feat: ...`와 `feat: ...` 둘 다 통과한다.
+
+```bash
+feat: 마감일 하한 추가        # OK
+✨ feat: 마감일 하한 추가      # OK
+✨ 없는타입: 제목              # 거부 (type-enum)
+feat: 제목에 마침표.          # 거부 (subject-full-stop)
+```

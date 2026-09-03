@@ -71,6 +71,12 @@ export default function TodoDetailPage() {
     // 실패하면 여기서 throw되어 아래 코드가 실행되지 않는다.
     // 폼은 그대로 남고 submitError가 화면에 표시된다 (TODO-13).
     await update.mutateAsync(body);
+    // dirty를 먼저 내려야 이동 중 이탈 확인이 뜨지 않는다.
+    // useUnsavedChanges가 dirty일 때 쌓아둔 popstate 가드도 이 시점에 정리된다.
+    setIsDirty(false);
+    // 저장 후 이 화면에 남을 이유가 없다. replace라 뒤로가기가 수정 화면으로
+    // 되돌아오지 않는다 (추가 화면과 같은 규칙).
+    router.replace("/todos");
   }
 
   function handleDelete() {

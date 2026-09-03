@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { todayIsoDate } from "@/lib/datetime";
 import { toDisplayMessage, toFieldErrors } from "@/lib/errorMessages";
-import { validateContent, validateTitle } from "@/lib/validation";
+import { validateContent, validateDueDate, validateTitle } from "@/lib/validation";
 
 import type { Priority, Todo, TodoCreateRequest } from "@/types/todo";
 
@@ -65,6 +66,19 @@ export function TodoForm({
   const titleResult = validateTitle(title);
   const contentResult = validateContent(contentHtml);
 
+  /**
+   * 마감일 하한. 지난 날짜를 새로 고르지 못하게 한다.
+   *
+   * 다만 이미 지난 마감일을 가진 할 일을 수정할 때는 그 값까지 하한을 내린다.
+   * 하한이 현재 값을 배제하면 제목만 고치려 해도 마감일이 범위 밖 값으로 남는다.
+   * 서버에는 이 제약이 없다(Todo.java에 날짜 검증이 없다) — 입력 편의를 위한 UI 제약이다.
+   */
+  const today = todayIsoDate();
+  const minDueDate = initial?.dueDate && initial.dueDate < today ? initial.dueDate : today;
+  // min 속성은 달력 UI만 막는다. form에 noValidate가 걸려 있어 직접 입력한 값은
+  // 브라우저 검증도 지나가므로, 제출 경로에서 한 번 더 본다.
+  const dueDateResult = validateDueDate(dueDate, minDueDate);
+
   const isDirty =
     baselineHtml !== null &&
     (title !== (initial?.title ?? "") ||
@@ -92,7 +106,7 @@ export function TodoForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setTouched(true);
-    if (!titleResult.ok || !contentResult.ok) return;
+    if (!titleResult.ok || !contentResult.ok || !dueDateResult.ok) return;
 
     await onSubmit({
       title: title.trim(),
@@ -149,15 +163,24 @@ export function TodoForm({
           </Select>
         </Field>
 
-        <Field id="dueDate" label="마감일" error={serverFieldErrors.dueDate}>
+        <Field
+          id="dueDate"
+          label="마감일"
+          error={
+            serverFieldErrors.dueDate ??
+            (touched && !dueDateResult.ok ? dueDateResult.message : undefined)
+          }
+        >
           {/* type=date의 값이 'YYYY-MM-DD'라 서버 LocalDate와 형식이 같다.
               Date 객체로 변환하면 타임존 때문에 하루가 밀린다. */}
           <Input
             id="dueDate"
             type="date"
             value={dueDate}
+            min={minDueDate}
             onChange={(e) => setDueDate(e.target.value)}
             className="min-h-11"
+            aria-invalid={Boolean(serverFieldErrors.dueDate) || (touched && !dueDateResult.ok)}
           />
         </Field>
       </div>

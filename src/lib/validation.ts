@@ -78,6 +78,24 @@ export function validateTitle(value: string): ValidationResult {
   return OK;
 }
 
+/**
+ * 마감일은 오늘 이후여야 한다.
+ *
+ * 이 제약은 서버에 없다(Todo.java에 날짜 검증이 없다). 그래서 이미 지난 마감일을 가진
+ * 기존 데이터가 존재할 수 있고, 그것을 수정하는 것까지 막으면 안 된다. 하한을 인자로
+ * 받는 이유가 그것이다 — 호출부가 기존 값에 맞춰 하한을 내린다.
+ *
+ * 빈 값은 통과한다. 마감일은 선택 항목이다 (PRD F-11).
+ */
+export function validateDueDate(value: string, minDate: string): ValidationResult {
+  if (value === "") return OK;
+  // 둘 다 "YYYY-MM-DD" 고정 폭이라 문자열 비교가 곧 날짜 비교다.
+  if (value < minDate) {
+    return { ok: false, message: "마감일은 오늘 이후로 정해 주세요." };
+  }
+  return OK;
+}
+
 export function validateContent(value: string): ValidationResult {
   if (value.length > CONTENT_MAX_LENGTH) {
     return {

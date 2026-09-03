@@ -17,12 +17,17 @@ interface UserMenuProps {
 
 export function UserMenu({ nickname, onLogout, isLoggingOut }: UserMenuProps) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm font-medium">{nickname}</span>
+    // 닉네임은 50자까지 허용되므로(NICKNAME_MAX_LENGTH) 좁은 화면에서 줄어들 수 있어야 한다.
+    // min-w-0이 없으면 flex 아이템이 콘텐츠 크기 아래로 줄지 않아 truncate가 걸리지 않는다.
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="truncate text-sm font-medium" title={nickname}>
+        {nickname}
+      </span>
       <Button
         variant="ghost"
         size="sm"
-        className="min-h-11 min-w-11"
+        // shrink-0: 줄어들 쪽은 닉네임이다. 버튼이 찌그러지면 터치 타겟이 무너진다
+        className="min-h-11 min-w-11 shrink-0"
         onClick={onLogout}
         disabled={isLoggingOut}
       >

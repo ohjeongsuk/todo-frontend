@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Field } from "@/components/common/Field";
 import { TodoEditor } from "@/components/todo/TodoEditor";
@@ -72,12 +72,13 @@ export function TodoForm({
       dueDate !== (initial?.dueDate ?? "") ||
       contentHtml !== baselineHtml);
 
-  // 렌더 중 조정. effect에서 동기적으로 setState하면 렌더가 연쇄된다.
-  const [reportedDirty, setReportedDirty] = useState(false);
-  if (reportedDirty !== isDirty) {
-    setReportedDirty(isDirty);
+  // onDirtyChange는 부모(NewTodoPage/[id]/page.tsx)의 state를 갱신하는 콜백이다.
+  // 렌더 중 조정 패턴(자기 자신의 state를 렌더 중에 맞추는 것)은 여기 쓸 수 없다 —
+  // 다른 컴포넌트의 state를 렌더 중에 갱신하면 "Cannot update a component while
+  // rendering a different component" 경고가 뜬다. 반드시 effect로 커밋 이후에 알린다.
+  useEffect(() => {
     onDirtyChange(isDirty);
-  }
+  }, [isDirty, onDirtyChange]);
 
   const handleEditorReady = useCallback((normalized: string) => {
     setContentHtml(normalized);

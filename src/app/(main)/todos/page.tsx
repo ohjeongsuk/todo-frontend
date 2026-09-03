@@ -111,15 +111,38 @@ function TodosContent() {
   // 목록은 유지하되(작업 맥락을 잃지 않게) 최신이 아님을 알리고 재시도 수단을 준다.
   const hasStaleData = isPaused && data !== undefined;
 
+  /**
+   * 빈 상태 안내가 자체 "할 일 추가" 버튼과 함께 화면에 뜨는지.
+   *
+   * 이 값이 true면 헤더의 추가 버튼을 감춘다. 같은 동작을 하는 버튼이 한 화면에
+   * 둘 있으면 안 되고, 빈 화면에서는 안내 문구 바로 아래에 버튼이 있는 편이
+   * 시선을 위로 되돌리지 않는다.
+   *
+   * 검색 결과가 없는 경우는 제외한다 — 할 일이 없는 게 아니라 필터가 걸린 것이라
+   * 그때는 헤더 버튼이 남아 있어야 한다.
+   *
+   * 아래 렌더 분기도 이 값을 그대로 쓴다. 조건을 두 곳에서 따로 계산하면
+   * 버튼이 둘 다 보이거나 둘 다 사라지는 상태가 생긴다.
+   */
+  const showsEmptyCta =
+    !query.isError &&
+    !(isPaused && data === undefined) &&
+    !isLoading &&
+    data !== undefined &&
+    data.content.length === 0 &&
+    !keyword;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">할 일</h1>
-        <Button asChild className="min-h-11">
-          <Link href="/todos/new">
-            <Plus className="size-4" />할 일 추가
-          </Link>
-        </Button>
+        {showsEmptyCta ? null : (
+          <Button asChild className="min-h-11">
+            <Link href="/todos/new">
+              <Plus className="size-4" />할 일 추가
+            </Link>
+          </Button>
+        )}
       </div>
 
       <TodoFilters
@@ -164,25 +187,29 @@ function TodosContent() {
         <ErrorState message={NETWORK_MESSAGE} onRetry={() => void query.refetch()} />
       ) : isLoading ? (
         <TodoListSkeleton />
+      ) : showsEmptyCta ? (
+        // 이 화면에서만 추가 버튼이 여기 하나 있다. 헤더 버튼은 위에서 감춰진다.
+        <EmptyState
+          icon={<Inbox />}
+          title="아직 할 일이 없어요"
+          description="첫 번째 할 일을 추가해 보세요."
+          action={
+            // 이제 이 화면의 유일한 추가 버튼이므로 헤더 버튼과 같은 모양으로 맞춘다.
+            // asChild는 자식이 하나여야 하므로 아이콘도 Link 안에 넣는다.
+            <Button asChild className="min-h-11">
+              <Link href="/todos/new">
+                <Plus className="size-4" />할 일 추가
+              </Link>
+            </Button>
+          }
+        />
       ) : data && data.content.length === 0 ? (
-        keyword ? (
-          <EmptyState
-            icon={<SearchX />}
-            title="검색 결과가 없어요"
-            description={`'${keyword}'와 일치하는 할 일을 찾지 못했습니다. 다른 검색어로 시도해 보세요.`}
-          />
-        ) : (
-          <EmptyState
-            icon={<Inbox />}
-            title="아직 할 일이 없어요"
-            description="첫 번째 할 일을 추가해 보세요."
-            action={
-              <Button asChild className="min-h-11">
-                <Link href="/todos/new">할 일 추가</Link>
-              </Button>
-            }
-          />
-        )
+        // 여기 도달했다면 keyword가 있다는 뜻이다(없으면 위 분기에서 걸린다).
+        <EmptyState
+          icon={<SearchX />}
+          title="검색 결과가 없어요"
+          description={`'${keyword}'와 일치하는 할 일을 찾지 못했습니다. 다른 검색어로 시도해 보세요.`}
+        />
       ) : data ? (
         <>
           <TodoList todos={data.content} onDelete={handleDelete} deletingId={deletingId} />

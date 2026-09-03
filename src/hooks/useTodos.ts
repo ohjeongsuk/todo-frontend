@@ -1,8 +1,10 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { apiClient } from "@/lib/apiClient";
+import { toDisplayMessage } from "@/lib/errorMessages";
 import { todoKeys } from "@/lib/queryKeys";
 
 import type { PageResponse } from "@/types/api";
@@ -74,36 +76,113 @@ export function useUpdateTodo(id: number) {
   });
 }
 
+/** 목록 캐시 안의 해당 id 항목만 completed를 바꾼 새 페이지 데이터를 만든다(불변 업데이트). */
+function patchContent(
+  page: PageResponse<Todo>,
+  id: number,
+  completed: boolean,
+): PageResponse<Todo> {
+  return {
+    ...page,
+    content: page.content.map((t) => (t.id === id ? { ...t, completed } : t)),
+  };
+}
+
 /**
  * 완료 토글. 목표 상태를 그대로 보낸다 — 서버가 값을 뒤집지 않는다.
- * 낙관적 업데이트는 Phase 9 범위다. 여기서는 응답을 받고 목록을 무효화한다.
+ *
+ * id별로 훅을 만든다(페이지 레벨에서 하나를 공유하지 않는다). scope는 useMutation 정의
+ * 시점의 정적 옵션이라 mutate() 호출마다 다르게 줄 수 없기 때문이다 — 같은 todo에 대한
+ * 연타를 직렬화하려면 그 todo 전용 mutation 인스턴스가 있어야 한다.
+ *
+ * scope를 쓰는 이유(더 간단해 보이는 onSettled의 isMutating() 가드를 쓰지 않는 이유):
+ * TanStack Query의 retryer는 canRun()(=scope 게이트)을 실제 mutationFn 호출, 즉 fetch를
+ * 보내기 "이전"에 확인한다(node_modules/@tanstack/query-core의 retryer.js canStart/pause와
+ * mutation.js execute() 순서로 확인). 즉 scope는 같은 id의 연속 클릭이 서버에 도달하는
+ * "요청 발사 순서" 자체를 직렬화한다. 반면 isMutating() 가드는 onSettled, 즉 응답이 이미
+ * 온 뒤에야 "이게 마지막 요청인지"를 판정하므로 네트워크 재정렬(요청이 보낸 순서와 다르게
+ * 서버에 도착하는 것)까지는 막지 못한다. 연타 후 "마지막 클릭 값으로 수렴"을 네트워크
+ * 조건과 무관하게 보장하려면 scope가 필요하다.
  */
-export function useToggleTodo() {
+export function useToggleTodo(id: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, completed }: { id: number; completed: boolean }) =>
+    scope: { id: `todo-toggle-${id}` },
+    mutationFn: (completed: boolean) =>
       apiClient.patch<Todo>(`/api/todos/${id}/toggle`, { completed }),
-    onSuccess: async (_data, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: todoKeys.detail(variables.id) }),
-        queryClient.invalidateQueries({ queryKey: todoKeys.lists() }),
-      ]);
+    onMutate: async (completed) => {
+      await queryClient.cancelQueries({ queryKey: todoKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: todoKeys.detail(id) });
+
+      const prevLists = queryClient.getQueriesData<PageResponse<Todo>>({
+        queryKey: todoKeys.lists(),
+      });
+      const prevDetail = queryClient.getQueryData<Todo>(todoKeys.detail(id));
+
+      queryClient.setQueriesData<PageResponse<Todo>>({ queryKey: todoKeys.lists() }, (old) =>
+        old ? patchContent(old, id, completed) : old,
+      );
+      queryClient.setQueryData<Todo>(todoKeys.detail(id), (old) =>
+        old ? { ...old, completed } : old,
+      );
+
+      return { prevLists, prevDetail };
+    },
+    onError: (_error, _completed, context) => {
+      context?.prevLists.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      if (context?.prevDetail !== undefined) {
+        queryClient.setQueryData(todoKeys.detail(id), context.prevDetail);
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: todoKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: todoKeys.detail(id) });
     },
   });
+}
+
+/** 목록 캐시에서 해당 id 항목을 제거한 새 페이지 데이터를 만든다(불변 업데이트). */
+function removeFromContent(page: PageResponse<Todo>, id: number): PageResponse<Todo> {
+  return {
+    ...page,
+    content: page.content.filter((t) => t.id !== id),
+    totalElements: Math.max(0, page.totalElements - 1),
+  };
 }
 
 /**
  * 삭제. Soft Delete라 서버에서 행은 남는다.
  *
- * 이동은 여기서 하지 않는다 — 목록에서 지우면 그 자리에 남고 상세에서 지우면 목록으로 가야 하므로
- * 화면의 관심사다. 또 이동을 onMutate로 앞당기면 실패 시 롤백이 사용자 눈에 보이지 않는다.
+ * 이동은 onSuccess(page.tsx의 mutate() 호출부)에서만 한다 — 목록에서 지우면 그 자리에 남고
+ * 상세에서 지우면 목록으로 가야 하므로 화면의 관심사다. onMutate로 앞당기면 실패 시 롤백이
+ * 사용자 눈에 보이지 않으므로 절대 옮기지 않는다.
+ *
+ * 삭제 확인 다이얼로그가 이미 연타를 막으므로(확인 버튼이 isDeleting일 때 비활성화) 토글과
+ * 달리 scope 직렬화는 필요 없다 — 페이지 레벨 단일 인스턴스를 그대로 공유한다.
  */
 export function useDeleteTodo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => apiClient.delete<void>(`/api/todos/${id}`),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: todoKeys.lists() });
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: todoKeys.lists() });
+
+      const prevLists = queryClient.getQueriesData<PageResponse<Todo>>({
+        queryKey: todoKeys.lists(),
+      });
+
+      queryClient.setQueriesData<PageResponse<Todo>>({ queryKey: todoKeys.lists() }, (old) =>
+        old ? removeFromContent(old, id) : old,
+      );
+
+      return { prevLists };
+    },
+    onError: (error, _id, context) => {
+      context?.prevLists.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      toast.error(toDisplayMessage(error));
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: todoKeys.lists() });
     },
   });
 }

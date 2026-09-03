@@ -57,3 +57,11 @@ Phase DoD는 이 두 명령의 **실제 종료 코드**로 판정한다. 빌드 
 
 husky + commitlint(`config-conventional`)가 걸려 있어 Conventional Commits 형식이 아니면
 커밋이 거부된다. lint-staged가 스테이징 파일에 prettier·eslint를 돌린다.
+
+**타입 앞 이모지는 선택 사항이다.** `✨ feat: ...`와 `feat: ...` 둘 다 통과한다.
+기본 파서는 헤더가 `type:`으로 시작한다고 보기 때문에 이모지를 붙이면 타입을 찾지 못해
+거부되는데, `commitlint.config.mjs`에서 `headerPattern`을 넓혀 앞의 이모지를 건너뛰게 했다.
+이모지를 강제하지는 않는다 — 기존 커밋 이력이 전부 이모지 없는 형식이라 강제하면 규칙이 갈린다.
+
+이 검사는 **이 저장소에만** 있다. `todo-backend`·`todo-project`에는 훅이 없어 형식이
+자동으로 검증되지 않으므로 그쪽에서는 직접 지켜야 한다.

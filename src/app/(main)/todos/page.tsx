@@ -13,7 +13,7 @@ import { TodoList } from "@/components/todo/TodoList";
 import { TodoListSkeleton } from "@/components/todo/TodoListSkeleton";
 import { Button } from "@/components/ui/button";
 import { NETWORK_MESSAGE, toDisplayMessage } from "@/lib/errorMessages";
-import { useDeleteTodo, useTodoList, useToggleTodo } from "@/hooks/useTodos";
+import { useDeleteTodo, useTodoList } from "@/hooks/useTodos";
 
 import type { SortDirection, Todo, TodoSortField } from "@/types/todo";
 
@@ -44,11 +44,9 @@ function TodosContent() {
     setKeywordInput(keyword);
   }
 
-  const [togglingId, setTogglingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const query = useTodoList({ completed, keyword, page, sort, direction });
-  const toggle = useToggleTodo();
   const remove = useDeleteTodo();
 
   /** 파라미터를 병합해 URL을 갱신한다. 값이 undefined면 해당 키를 지운다. */
@@ -75,15 +73,6 @@ function TodosContent() {
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [keywordInput, keyword, updateParams]);
-
-  function handleToggle(todo: Todo) {
-    setTogglingId(todo.id);
-    // 목표 상태를 보낸다. 서버가 값을 뒤집지 않는다.
-    toggle.mutate(
-      { id: todo.id, completed: !todo.completed },
-      { onSettled: () => setTogglingId(null) },
-    );
-  }
 
   function handleDelete(todo: Todo) {
     setDeletingId(todo.id);
@@ -148,15 +137,6 @@ function TodosContent() {
         onSortChange={(s, d) => updateParams({ sort: s, direction: d, page: undefined }, "replace")}
       />
 
-      {remove.isError ? (
-        <p
-          role="alert"
-          className="rounded-md border border-destructive p-3 text-sm text-destructive"
-        >
-          {toDisplayMessage(remove.error)}
-        </p>
-      ) : null}
-
       {hasStaleData ? (
         <div
           role="alert"
@@ -205,13 +185,7 @@ function TodosContent() {
         )
       ) : data ? (
         <>
-          <TodoList
-            todos={data.content}
-            onToggle={handleToggle}
-            onDelete={handleDelete}
-            togglingId={togglingId}
-            deletingId={deletingId}
-          />
+          <TodoList todos={data.content} onDelete={handleDelete} deletingId={deletingId} />
           <Pagination
             page={data.page}
             totalPages={data.totalPages}

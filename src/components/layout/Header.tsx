@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+
 /**
  * 공통 헤더 껍데기.
  *
@@ -22,8 +24,11 @@ export function Header({ actions }: { actions?: React.ReactNode }) {
           Todo List
         </Link>
 
-        {/* Phase 7에서 닉네임·로그아웃이 이 슬롯으로 들어온다 */}
-        <div className="flex items-center gap-2">{actions}</div>
+        <div className="flex items-center gap-2">
+          {/* 테마 전환은 로그인 여부와 무관하므로 슬롯이 아니라 헤더가 직접 들고 있는다 */}
+          <ThemeToggle />
+          {actions}
+        </div>
       </div>
     </header>
   );

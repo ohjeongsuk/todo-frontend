@@ -46,6 +46,16 @@ export function formatRelative(raw: IsoDateTime): string {
   });
 }
 
+/**
+ * 오늘 날짜를 서버 LocalDate와 같은 "2026-09-03" 형식으로 반환한다.
+ *
+ * toISOString()을 쓰지 않는다 — 그쪽은 UTC로 변환하므로 KST 자정 직후에 어제가 나온다.
+ * 여기서 필요한 것은 사용자가 보고 있는 로컬 날짜다. 마감일 입력의 하한에 쓴다.
+ */
+export function todayIsoDate(): IsoDate {
+  return format(new Date(), "yyyy-MM-dd");
+}
+
 /** 마감일이 오늘보다 이전인지. 완료되지 않은 할 일의 지연 표시에 쓴다. */
 export function isOverdue(dueDate: IsoDate): boolean {
   const due = parseServerDate(dueDate);

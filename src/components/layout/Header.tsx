@@ -17,14 +17,20 @@ export function Header({ actions }: { actions?: React.ReactNode }) {
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
         <Link
           href="/"
-          className="rounded-md text-base font-semibold tracking-tight"
+          // shrink-0: 좁은 화면에서 줄어들 쪽은 닉네임이지 서비스 이름이 아니다
+          className="shrink-0 rounded-md text-base font-semibold tracking-tight"
           // 터치 타겟 최소 44x44px (PRD NF-22)
           style={{ minHeight: 44, display: "inline-flex", alignItems: "center" }}
         >
           Todo List
         </Link>
 
-        <div className="flex items-center gap-2">
+        {/*
+          min-w-0이 없으면 flex 아이템의 최소 크기가 콘텐츠 크기로 고정돼 자식이 줄어들지
+          못한다. 닉네임은 50자까지 허용되므로(NICKNAME_MAX_LENGTH) 이게 없으면 긴 닉네임에서
+          헤더가 320px를 넘어 가로 스크롤이 생긴다. UserMenu 안쪽에도 같은 처리가 필요하다.
+        */}
+        <div className="flex min-w-0 items-center gap-2">
           {/* 테마 전환은 로그인 여부와 무관하므로 슬롯이 아니라 헤더가 직접 들고 있는다 */}
           <ThemeToggle />
           {actions}

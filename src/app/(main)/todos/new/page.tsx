@@ -16,10 +16,12 @@ export default function NewTodoPage() {
   const { confirmNavigation } = useUnsavedChanges(isDirty);
 
   async function handleSubmit(body: TodoCreateRequest) {
-    const created = await create.mutateAsync(body);
+    await create.mutateAsync(body);
     // dirty를 먼저 내려야 이동 중 이탈 확인이 뜨지 않는다.
     setIsDirty(false);
-    router.replace(`/todos/${created.id}`);
+    // 추가한 항목 하나가 아니라 목록으로 보낸다. 연달아 추가하거나 방금 넣은 것이
+    // 전체에서 어디쯤인지 보는 쪽이 실제 흐름에 가깝다.
+    router.replace("/todos");
   }
 
   return (

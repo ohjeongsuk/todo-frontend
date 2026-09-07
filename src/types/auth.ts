@@ -33,3 +33,18 @@ export interface UserResponse {
   nickname: string;
   email: string;
 }
+
+/** 재설정 링크 발송 요청 (PRD F-41). 응답 본문은 없다 — 계정 유무와 무관하게 204다. */
+export interface PasswordForgotRequest {
+  email: string;
+}
+
+/**
+ * 새 비밀번호 확정 (PRD F-42).
+ *
+ * 응답에 토큰이 없다. 재설정 후 자동 로그인시키지 않고 로그인 화면으로 보낸다 (PRD F-44).
+ */
+export interface PasswordResetRequest {
+  token: string;
+  newPassword: string;
+}

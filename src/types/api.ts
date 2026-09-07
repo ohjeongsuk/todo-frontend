@@ -44,6 +44,8 @@ export type ErrorCode =
   | "FILE_TOO_LARGE" // 400
   | "UNSUPPORTED_FILE_TYPE" // 400
   | "UPLOAD_NOT_COMPLETED" // 400
+  // 비밀번호 재설정 요청 빈도 제한 (PRD NF-30)
+  | "TOO_MANY_REQUESTS" // 429
   | "INTERNAL_ERROR"; // 500
 
 /**

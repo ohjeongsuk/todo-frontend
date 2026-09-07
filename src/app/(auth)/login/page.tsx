@@ -120,6 +120,15 @@ function LoginForm() {
           />
         </Field>
 
+        <p className="text-right text-sm">
+          <Link
+            href="/forgot-password"
+            className="rounded text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            비밀번호를 잊으셨나요?
+          </Link>
+        </p>
+
         <Button type="submit" className="min-h-11 w-full" disabled={isLoggingIn}>
           {isLoggingIn ? "로그인 중..." : "로그인"}
         </Button>

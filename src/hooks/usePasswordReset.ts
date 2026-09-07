@@ -44,8 +44,15 @@ export function usePasswordReset() {
 export function useVerifyResetToken(token: string | null) {
   return useQuery({
     queryKey: ["password-reset", "verify", token],
-    queryFn: () =>
-      apiClient.get<void>(`/api/auth/password/verify?token=${encodeURIComponent(token ?? "")}`),
+    // 서버는 유효하면 204(본문 없음)를 준다. 그대로 두면 queryFn이 undefined를 반환하는데
+    // React Query는 이를 오류로 취급한다("Query data cannot be undefined") — 유효한 링크인데도
+    // 화면이 만료 안내로 떨어진다. 성공을 나타내는 값으로 바꿔 준다.
+    queryFn: async () => {
+      await apiClient.get<void>(
+        `/api/auth/password/verify?token=${encodeURIComponent(token ?? "")}`,
+      );
+      return true as const;
+    },
     enabled: Boolean(token),
     retry: false,
     // 토큰은 1회용이라 캐시를 재사용할 이유가 없다.

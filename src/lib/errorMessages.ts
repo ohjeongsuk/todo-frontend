@@ -24,6 +24,8 @@ const MESSAGES: Record<ErrorCode, string> = {
   FILE_TOO_LARGE: "파일 크기가 허용 범위를 넘었습니다.",
   UNSUPPORTED_FILE_TYPE: "지원하지 않는 파일 형식입니다.",
   UPLOAD_NOT_COMPLETED: "업로드가 완료되지 않았습니다.",
+  // 비밀번호 재설정 요청 빈도 제한 (PRD NF-30).
+  TOO_MANY_REQUESTS: "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.",
   INTERNAL_ERROR: "서버 오류가 발생했습니다.",
 };
 

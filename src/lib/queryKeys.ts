@@ -23,3 +23,14 @@ export const todoKeys = {
   details: () => [...todoKeys.all, "detail"] as const,
   detail: (id: number) => [...todoKeys.details(), id] as const,
 };
+
+/**
+ * 첨부 조회 URL 캐시 키.
+ *
+ * URL 이 만료되므로(기본 30분) staleTime 을 만료보다 짧게 잡아야 한다. 캐시가 만료된 URL 을
+ * 계속 돌려주면 이미지가 조용히 깨진다.
+ */
+export const attachmentKeys = {
+  all: ["attachments"] as const,
+  viewUrls: (ids: number[]) => [...attachmentKeys.all, "view-urls", [...ids].sort()] as const,
+};

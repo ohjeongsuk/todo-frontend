@@ -13,28 +13,18 @@ import DOMPurify from "isomorphic-dompurify";
  */
 
 /** HtmlSanitizer.SAFELIST.addTags(...)와 정확히 같은 목록이다. */
-const ALLOWED_TAGS = [
-  "p",
-  "h2",
-  "h3",
-  "strong",
-  "em",
-  "ul",
-  "ol",
-  "li",
-  "blockquote",
-  "pre",
-  "code",
-  "br",
-  "a",
-] as const;
+const ALLOWED_TAGS = ["p", "strong", "em", "ul", "ol", "li", "br", "a", "img"] as const;
 
 /**
  * rel을 빠뜨리면 서버가 addEnforcedAttribute로 주입한
  * rel="nofollow noopener noreferrer" tabnabbing 방어가 렌더 단계에서 지워진다.
  * target도 같은 이유로 유지한다.
+ *
+ * img에는 src가 없다 (PRD F-49). 조회 URL은 30분 만료라 본문 HTML에 박아두면
+ * 며칠 뒤 전부 깨진다. data-attachment-id만 저장하고 렌더 시점에 src를 주입한다.
+ * 부수 효과로 javascript: src 주입 경로가 원천 차단된다.
  */
-const ALLOWED_ATTR = ["href", "rel", "target"] as const;
+const ALLOWED_ATTR = ["href", "rel", "target", "alt", "data-attachment-id"] as const;
 
 export function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {

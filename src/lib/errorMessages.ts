@@ -20,6 +20,10 @@ const MESSAGES: Record<ErrorCode, string> = {
   RESET_TOKEN_INVALID: "링크가 만료되었거나 이미 사용되었습니다.",
   FORBIDDEN: "접근 권한이 없습니다.",
   NOT_FOUND: "요청한 리소스를 찾을 수 없습니다.",
+  // 첨부 업로드 (PRD F-47, NF-34).
+  FILE_TOO_LARGE: "파일 크기가 허용 범위를 넘었습니다.",
+  UNSUPPORTED_FILE_TYPE: "지원하지 않는 파일 형식입니다.",
+  UPLOAD_NOT_COMPLETED: "업로드가 완료되지 않았습니다.",
   INTERNAL_ERROR: "서버 오류가 발생했습니다.",
 };
 

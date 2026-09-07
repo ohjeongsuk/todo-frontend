@@ -27,7 +27,7 @@ export interface PageResponse<T> {
 }
 
 /**
- * 백엔드 ErrorCode enum과 1:1 대응하는 7종.
+ * 백엔드 ErrorCode enum과 1:1 대응하는 10종.
  * 정본: todo-backend/src/main/java/com/example/todoapp/exception/ErrorCode.java
  *
  * 주의: TODO_NOT_FOUND라는 코드는 존재하지 않는다. 실제 이름은 NOT_FOUND다.
@@ -39,6 +39,11 @@ export type ErrorCode =
   | "RESET_TOKEN_INVALID" // 400
   | "FORBIDDEN" // 403
   | "NOT_FOUND" // 404
+  // 첨부 업로드 (PRD F-47, NF-34). INVALID_INPUT으로 묶지 않는 이유는
+  // "용량 초과"와 "지원하지 않는 형식"을 사용자에게 다르게 안내해야 하기 때문이다.
+  | "FILE_TOO_LARGE" // 400
+  | "UNSUPPORTED_FILE_TYPE" // 400
+  | "UPLOAD_NOT_COMPLETED" // 400
   | "INTERNAL_ERROR"; // 500
 
 /**

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 
 import { ThemeToaster } from "@/components/layout/ThemeToaster";
@@ -24,13 +23,6 @@ const pretendard = localFont({
     "Malgun Gothic",
     "sans-serif",
   ],
-});
-
-// 코드 블록(Tiptap의 pre·code)에만 쓰는 고정폭 폰트
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -64,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ko"
       data-theme="light"
       suppressHydrationWarning
-      className={`${pretendard.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${pretendard.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

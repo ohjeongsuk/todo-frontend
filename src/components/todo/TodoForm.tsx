@@ -185,7 +185,12 @@ export function TodoForm({
         </Field>
       </div>
 
-      <Field id="content" label="본문" error={serverFieldErrors.content ?? contentResult.message}>
+      <Field
+        id="content"
+        label="본문"
+        labelable={false}
+        error={serverFieldErrors.content ?? contentResult.message}
+      >
         <TodoEditor
           initialHtml={initial?.content ?? ""}
           onChange={setContentHtml}

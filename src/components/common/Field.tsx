@@ -9,6 +9,14 @@ interface FieldProps {
   /** 항상 보이는 도움말. 바이트 제한 안내처럼 미리 알려야 하는 내용에 쓴다. */
   hint?: string;
   required?: boolean;
+  /**
+   * 자식이 label의 for로 가리킬 수 있는 요소가 아닐 때 false로 준다.
+   * HTML 명세상 for가 동작하는 대상은 button·input·meter·output·progress·select·textarea 뿐이다.
+   * Tiptap이 렌더하는 div[contenteditable]은 여기 없어서 for를 붙이면 매칭 대상이 없는
+   * 빈 참조가 되고, 브라우저가 자동완성·접근성 경고를 낸다. 그 경우 접근성 이름은
+   * 자식 쪽 aria-label이 책임진다 (TodoEditor의 editorProps.attributes).
+   */
+  labelable?: boolean;
   children: React.ReactNode;
 }
 
@@ -23,10 +31,18 @@ interface FieldProps {
  * 그 값들을 여기서 계산해 내려줄 수 없어(children이 이미 만들어진 엘리먼트다)
  * 아래 describedById/errorId를 export 대신 규칙으로 못박는다: `${id}-error`, `${id}-hint`.
  */
-export function Field({ id, label, error, hint, required, children }: FieldProps) {
+export function Field({
+  id,
+  label,
+  error,
+  hint,
+  required,
+  labelable = true,
+  children,
+}: FieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={labelable ? id : undefined} className="text-sm font-medium">
         {label}
         {required ? (
           <span className="ml-0.5 text-destructive" aria-hidden>
